@@ -107,20 +107,25 @@ async def list_tasks():
 
 
 @app.post("/reset")
-async def reset(request: ResetRequest):
+async def reset(request: Optional[ResetRequest] = Body(default=None)):
     """
     Initialise (or reinitialise) the environment for a given task.
     Returns the initial Observation.
     """
     global _env
-    try:
-        task_id = TaskId(request.task_id)
-    except ValueError:
-        valid = [t.value for t in TaskId]
-        raise HTTPException(
-            status_code=422,
-            detail=f"Unknown task_id '{request.task_id}'. Valid: {valid}",
-        )
+
+    # ✅ Handle empty body
+    if request is None or request.task_id is None:
+        task_id = TaskId("order_refund")  # default task
+    else:
+        try:
+            task_id = TaskId(request.task_id)
+        except ValueError:
+            valid = [t.value for t in TaskId]
+            raise HTTPException(
+                status_code=422,
+                detail=f"Unknown task_id '{request.task_id}'. Valid: {valid}",
+            )
 
     _env = CustomerSupportEnv(task_id=task_id)
     obs = _env.reset()
