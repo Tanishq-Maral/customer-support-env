@@ -1,0 +1,16 @@
+[project]
+name = "customer-support-env"
+version = "0.1.0"
+description = "Customer Support OpenEnv environment"
+authors = [{ name = "Tanishq Maral" }]
+requires-python = ">=3.10"
+
+dependencies = [
+    "fastapi",
+    "uvicorn",
+    "pydantic",
+    "httpx"
+]
+
+[tool.openenv]
+entry_point = "app:app"
