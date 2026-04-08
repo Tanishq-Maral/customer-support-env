@@ -1,0 +1,75 @@
+name: customer-support-env
+version: 1.0.0
+description: >
+  A realistic customer support environment where AI agents resolve
+  multi-step customer queries using external tools (order lookup,
+  refund processing, knowledge base search, account management).
+  Agents must triage, diagnose, and resolve tickets while adhering
+  to company policies and maintaining customer satisfaction.
+
+author: OpenEnv Submission
+license: MIT
+tags:
+  - customer-support
+  - nlp
+  - multi-step
+  - tool-use
+  - real-world
+
+tasks:
+  - id: order_refund
+    name: "Order Refund Processing"
+    difficulty: easy
+    description: >
+      Agent receives a customer complaint about a damaged/wrong item.
+      Must look up the order, verify eligibility, and issue a refund
+      following company policy (within 30 days, order must exist).
+    max_steps: 10
+    reward_range: [0.0, 1.0]
+
+  - id: account_billing_dispute
+    name: "Account & Billing Dispute"
+    difficulty: medium
+    description: >
+      Agent handles a billing dispute: customer was double-charged.
+      Must verify the account, identify duplicate transactions,
+      apply a credit, and send a confirmation email.
+    max_steps: 15
+    reward_range: [0.0, 1.0]
+
+  - id: technical_escalation
+    name: "Technical Issue with Escalation"
+    difficulty: hard
+    description: >
+      Agent handles a complex technical outage report affecting
+      multiple services. Must diagnose root cause via tool calls,
+      apply workaround, file an escalation ticket, and proactively
+      notify affected customers—all within SLA.
+    max_steps: 20
+    reward_range: [0.0, 1.0]
+
+observation_space:
+  type: object
+  fields:
+    ticket: Customer support ticket text
+    customer_id: Unique customer identifier
+    history: List of prior actions and tool responses
+    available_tools: Tools the agent may call
+    step_number: Current step index
+    sla_remaining: Seconds remaining before SLA breach
+
+action_space:
+  type: object
+  fields:
+    tool: Name of tool to invoke (or "respond" to send final reply)
+    params: Key-value parameters for the tool
+    message: Agent message to customer (used when tool="respond")
+
+reward:
+  components:
+    - resolution_correct: 0–0.5 based on whether issue was resolved correctly
+    - policy_compliance: 0–0.2 based on adherence to company policies
+    - efficiency: 0–0.15 based on steps used vs optimal
+    - customer_satisfaction: 0–0.15 based on response quality
+
+entry_point: env.CustomerSupportEnv
