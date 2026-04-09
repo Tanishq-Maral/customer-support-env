@@ -77,12 +77,16 @@ def log_start(task_id: str) -> None:
 
 def log_step(task_id: str, step: int, action: str, reward: float, done: bool) -> None:
     """[STEP] line — stdout."""
+    # Clamp reward strictly between 0 and 1 (exclusive)
+    reward = max(0.001, min(0.999, reward))
     record = {"task_id": task_id, "step": step, "action": action, "reward": reward, "done": done}
     print(f"[STEP] {json.dumps(record)}", flush=True)
 
 
 def log_end(task_id: str, score: float, steps: int) -> None:
     """[END] line — stdout."""
+    # Clamp score strictly between 0 and 1 (exclusive)
+    score = max(0.001, min(0.999, score))
     record = {"task_id": task_id, "score": score, "steps": steps, "timestamp": _ts()}
     print(f"[END] {json.dumps(record)}", flush=True)
 

@@ -223,7 +223,7 @@ class CustomerSupportEnv:
 
         # Terminal evaluation via grader.
         # Non-terminal: placeholder with total set as a real field so it appears in JSON.
-        breakdown = RewardBreakdown(resolution_correct=0.001, total=0.001)
+        breakdown = RewardBreakdown()  # defaults: all components=0.001, total=0.004
         if self._done:
             breakdown = grade(
                 task_id      = self.task_id.value,
