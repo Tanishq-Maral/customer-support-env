@@ -89,10 +89,10 @@ class Action(BaseModel):
 
 
 class RewardBreakdown(BaseModel):
-    resolution_correct:    float = Field(0.001, ge=0.0, le=0.5)
-    policy_compliance:     float = Field(0.001, ge=0.0, le=0.2)
-    efficiency:            float = Field(0.001, ge=0.0, le=0.15)
-    customer_satisfaction: float = Field(0.001, ge=0.0, le=0.15)
+    resolution_correct:    float = Field(0.01, ge=0.0, le=0.5)
+    policy_compliance:     float = Field(0.01, ge=0.0, le=0.2)
+    efficiency:            float = Field(0.01, ge=0.0, le=0.15)
+    customer_satisfaction: float = Field(0.01, ge=0.0, le=0.15)
     # total is a real field (not a @property) so it appears in model_dump() / JSON
     # Must be strictly between 0 and 1 (exclusive) per OpenEnv spec
     total:                 float = Field(0.004, gt=0.0, lt=1.0)
@@ -102,14 +102,14 @@ class RewardBreakdown(BaseModel):
         """Ensure total is always strictly between 0 and 1."""
         if self.total <= 0.0 or self.total >= 1.0:
             object.__setattr__(self, 'total',
-                max(0.001, min(0.999, self.total)))
+                max(0.01, min(0.99, self.total)))
         return self
 
     def compute_total(self) -> "RewardBreakdown":
         """Recompute and set total from components. Call after setting components."""
         raw = (self.resolution_correct + self.policy_compliance +
                self.efficiency + self.customer_satisfaction)
-        clamped = max(0.001, min(0.999, raw))
+        clamped = max(0.01, min(0.99, raw))
         object.__setattr__(self, "total", clamped)
         return self
 

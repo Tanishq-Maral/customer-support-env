@@ -204,7 +204,7 @@ class CustomerSupportEnv:
         Intermediate steps get a small shaped signal.
         Terminal step (respond or max_steps) gets the full grader evaluation.
         """
-        step_reward = 0.001  # Base reward to ensure we never return exactly 0.0
+        step_reward = 0.01  # Base reward to ensure we never return exactly 0.0
         info: Dict[str, Any] = {}
 
         # Penalty for tool errors
@@ -223,7 +223,7 @@ class CustomerSupportEnv:
 
         # Terminal evaluation via grader.
         # Non-terminal: placeholder with total set as a real field so it appears in JSON.
-        breakdown = RewardBreakdown()  # defaults: all components=0.001, total=0.004
+        breakdown = RewardBreakdown()  # defaults: all components=0.01, total=0.04
         if self._done:
             breakdown = grade(
                 task_id      = self.task_id.value,
@@ -243,7 +243,7 @@ class CustomerSupportEnv:
                 info["efficiency_bonus"] = self.EFFICIENCY_BONUS
 
         # Clip to (0, 1) - strictly between, not at boundaries
-        step_reward = max(0.001, min(0.999, step_reward))
+        step_reward = max(0.01, min(0.99, step_reward))
 
         return Reward(
             value     = round(step_reward, 4),

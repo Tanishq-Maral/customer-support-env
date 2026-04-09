@@ -316,7 +316,7 @@ def _set_total(bd: RewardBreakdown) -> RewardBreakdown:
     raw = (bd.resolution_correct + bd.policy_compliance +
            bd.efficiency + bd.customer_satisfaction)
     # Clamp strictly between 0 and 1 (exclusive)
-    clamped = max(0.001, min(0.999, round(raw, 4)))
+    clamped = max(0.01, min(0.99, round(raw, 4)))
     # Use model_copy to produce an updated immutable model
     return bd.model_copy(update={"total": clamped})
 
