@@ -52,13 +52,13 @@ def _message_contains(history: List[ToolCall], *keywords: str) -> bool:
 def _score_efficiency(steps_used: int, optimal: int, max_steps: int) -> float:
     """
     1.0 if steps_used <= optimal.
-    Linearly decays to 0.1 at max_steps (to avoid exactly 0.0).
+    Linearly decays to 0.01 at max_steps (to avoid exactly 0.0).
     """
     if steps_used <= optimal:
-        return 0.9  # Avoid exactly 1.0
+        return 0.99  # Avoid exactly 1.0
     if steps_used >= max_steps:
-        return 0.1  # Avoid exactly 0.0
-    return 0.9 - (steps_used - optimal) / (max_steps - optimal) * 0.8
+        return 0.01  # Avoid exactly 0.0
+    return 0.99 - (steps_used - optimal) / (max_steps - optimal) * 0.98
 
 
 def _score_message_quality(message: str) -> float:
@@ -109,10 +109,10 @@ def grade_order_refund(
         # At least looked up the order
         breakdown.resolution_correct = 0.10
     else:
-        breakdown.resolution_correct = 0.1  # Avoid exactly 0.0
+        breakdown.resolution_correct = 0.01  # Avoid exactly 0.0
 
     # --- policy_compliance (0–0.20) ------------------------------------------
-    pc = 0.1  # Start at 0.1 to avoid exactly 0.0
+    pc = 0.01  # Start at 0.01 to avoid exactly 0.0
     if _tool_was_called(history, "lookup_order"):
         pc += 0.10   # Good: looked up order before acting
     # Verify agent did NOT try to refund an out-of-window order (ORD-1002 is out of window)
@@ -169,7 +169,7 @@ def grade_account_billing_dispute(
 
     if cust_credits and email_sent:
         # Check credit amount is correct (≈89.99)
-        correct_amount = any(abs(c["amount"] - 89.99) < 0.1 for c in cust_credits)
+        correct_amount = any(abs(c["amount"] - 89.99) < 0.01 for c in cust_credits)
         breakdown.resolution_correct = 0.50 if correct_amount else 0.35
     elif cust_credits:
         breakdown.resolution_correct = 0.30
@@ -178,10 +178,10 @@ def grade_account_billing_dispute(
     elif account_checked:
         breakdown.resolution_correct = 0.08
     else:
-        breakdown.resolution_correct = 0.1  # Avoid exactly 0.0
+        breakdown.resolution_correct = 0.01  # Avoid exactly 0.0
 
     # --- policy_compliance (0–0.20) ------------------------------------------
-    pc = 0.1  # Start at 0.1 to avoid exactly 0.0
+    pc = 0.01  # Start at 0.01 to avoid exactly 0.0
     if account_checked:
         pc += 0.07   # Verified account before financial action
     if transactions_checked:
@@ -247,7 +247,7 @@ def grade_technical_escalation(
     responded          = any(h.tool == "respond" for h in history)
 
     # Partial credit breakdown:
-    score = 0.1  # Start at 0.1 to avoid exactly 0.0
+    score = 0.01  # Start at 0.01 to avoid exactly 0.0
     if status_checked:      score += 0.05
     if auth_workaround:     score += 0.10
     if stream_workaround:   score += 0.10
@@ -257,7 +257,7 @@ def grade_technical_escalation(
     breakdown.resolution_correct = min(score, 0.50)
 
     # --- policy_compliance (0–0.20) ------------------------------------------
-    pc = 0.1  # Start at 0.1 to avoid exactly 0.0
+    pc = 0.01  # Start at 0.01 to avoid exactly 0.0
     # Must check status before applying workaround
     status_before_workaround = True
     seen_status = False

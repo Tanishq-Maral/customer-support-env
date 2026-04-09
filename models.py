@@ -89,13 +89,13 @@ class Action(BaseModel):
 
 
 class RewardBreakdown(BaseModel):
-    resolution_correct:    float = Field(0.1, ge=0.0, le=0.5)
-    policy_compliance:     float = Field(0.1, ge=0.0, le=0.2)
-    efficiency:            float = Field(0.1, ge=0.0, le=0.15)
-    customer_satisfaction: float = Field(0.1, ge=0.0, le=0.15)
+    resolution_correct:    float = Field(0.01, gt=0.0, lt=0.5)
+    policy_compliance:     float = Field(0.01, gt=0.0, lt=0.2)
+    efficiency:            float = Field(0.01, gt=0.0, lt=0.15)
+    customer_satisfaction: float = Field(0.01, gt=0.0, lt=0.15)
     # total is a real field (not a @property) so it appears in model_dump() / JSON
     # Must be strictly between 0 and 1 (exclusive) per OpenEnv spec
-    total:                 float = Field(0.04, gt=0.0, lt=1.0)
+    total:                 float = Field(0.1, ge=0.1, le=0.9)
 
     @model_validator(mode='after')
     def _clamp_total(self) -> 'RewardBreakdown':
@@ -116,7 +116,7 @@ class RewardBreakdown(BaseModel):
 
 class Reward(BaseModel):
     """Reward returned by step()."""
-    value:     float           = Field(..., gt=0.0, lt=1.0)
+    value:     float           = Field(..., ge=0.1, le=0.9)
     breakdown: RewardBreakdown
     done:      bool
     info:      Dict[str, Any]  = Field(default_factory=dict)
