@@ -52,13 +52,13 @@ def _message_contains(history: List[ToolCall], *keywords: str) -> bool:
 def _score_efficiency(steps_used: int, optimal: int, max_steps: int) -> float:
     """
     1.0 if steps_used <= optimal.
-    Linearly decays to 0.0 at max_steps.
+    Linearly decays to 0.01 at max_steps (to avoid exactly 0.0).
     """
     if steps_used <= optimal:
-        return 1.0
+        return 0.99  # Avoid exactly 1.0
     if steps_used >= max_steps:
-        return 0.0
-    return 1.0 - (steps_used - optimal) / (max_steps - optimal)
+        return 0.01  # Avoid exactly 0.0
+    return 0.99 - (steps_used - optimal) / (max_steps - optimal) * 0.98
 
 
 def _score_message_quality(message: str) -> float:
@@ -67,7 +67,7 @@ def _score_message_quality(message: str) -> float:
     Checks for empathy, action taken, and resolution confirmation.
     """
     if not message or len(message) < 20:
-        return 0.0
+        return 0.05  # Avoid exactly 0.0
     score = 0.0
     empathy_words   = ["sorry", "apologize", "understand", "frustrating", "thank"]
     action_words    = ["refund", "credit", "ticket", "resolved", "applied", "issued", "notified"]
@@ -79,7 +79,7 @@ def _score_message_quality(message: str) -> float:
         score += 0.40
     if any(w in message.lower() for w in confirm_words):
         score += 0.25
-    return min(score, 1.0)
+    return min(score, 0.95)  # Avoid exactly 1.0
 
 
 # ---------------------------------------------------------------------------
@@ -109,11 +109,10 @@ def grade_order_refund(
         # At least looked up the order
         breakdown.resolution_correct = 0.10
     else:
-        breakdown.resolution_correct = 0.0
+        breakdown.resolution_correct = 0.01  # Avoid exactly 0.0
 
     # --- policy_compliance (0–0.20) ------------------------------------------
-    # Policy: must look up order first, must check it's within 30 days
-    pc = 0.0
+    pc = 0.01  # Start at 0.01 to avoid exactly 0.0
     if _tool_was_called(history, "lookup_order"):
         pc += 0.10   # Good: looked up order before acting
     # Verify agent did NOT try to refund an out-of-window order (ORD-1002 is out of window)
@@ -125,7 +124,7 @@ def grade_order_refund(
     ]
     if not bad_refund_calls:
         pc += 0.10   # Good: only refunded the correct order
-    breakdown.policy_compliance = pc
+    breakdown.policy_compliance = min(pc, 0.20)
 
     # --- efficiency (0–0.15) -------------------------------------------------
     eff = _score_efficiency(steps_used, optimal_steps, max_steps)
@@ -179,10 +178,10 @@ def grade_account_billing_dispute(
     elif account_checked:
         breakdown.resolution_correct = 0.08
     else:
-        breakdown.resolution_correct = 0.0
+        breakdown.resolution_correct = 0.01  # Avoid exactly 0.0
 
     # --- policy_compliance (0–0.20) ------------------------------------------
-    pc = 0.0
+    pc = 0.01  # Start at 0.01 to avoid exactly 0.0
     if account_checked:
         pc += 0.07   # Verified account before financial action
     if transactions_checked:
@@ -197,7 +196,7 @@ def grade_account_billing_dispute(
             credit_before_txn = True
     if not credit_before_txn:
         pc += 0.06
-    breakdown.policy_compliance = pc
+    breakdown.policy_compliance = min(pc, 0.20)
 
     # --- efficiency (0–0.15) -------------------------------------------------
     eff = _score_efficiency(steps_used, optimal_steps, max_steps)
@@ -248,7 +247,7 @@ def grade_technical_escalation(
     responded          = any(h.tool == "respond" for h in history)
 
     # Partial credit breakdown:
-    score = 0.0
+    score = 0.01  # Start at 0.01 to avoid exactly 0.0
     if status_checked:      score += 0.05
     if auth_workaround:     score += 0.10
     if stream_workaround:   score += 0.10
@@ -258,7 +257,7 @@ def grade_technical_escalation(
     breakdown.resolution_correct = min(score, 0.50)
 
     # --- policy_compliance (0–0.20) ------------------------------------------
-    pc = 0.0
+    pc = 0.01  # Start at 0.01 to avoid exactly 0.0
     # Must check status before applying workaround
     status_before_workaround = True
     seen_status = False
@@ -312,6 +311,16 @@ GRADERS = {
 }
 
 
+def _set_total(bd: RewardBreakdown) -> RewardBreakdown:
+    """Set the total field from the four components, clamped strictly to (0, 1)."""
+    raw = (bd.resolution_correct + bd.policy_compliance +
+           bd.efficiency + bd.customer_satisfaction)
+    # Clamp strictly between 0 and 1 (exclusive)
+    clamped = max(0.001, min(0.999, round(raw, 4)))
+    # Use model_copy to produce an updated immutable model
+    return bd.model_copy(update={"total": clamped})
+
+
 def grade(
     task_id: str,
     history: List[ToolCall],
@@ -322,4 +331,5 @@ def grade(
     fn = GRADERS.get(task_id)
     if fn is None:
         raise ValueError(f"No grader for task_id='{task_id}'")
-    return fn(history, steps_used, optimal_steps, max_steps)
+    bd = fn(history, steps_used, optimal_steps, max_steps)
+    return _set_total(bd)

@@ -73,6 +73,11 @@ def assert_range(val, lo, hi, msg=""):
     assert lo <= val <= hi, f"{val} not in [{lo}, {hi}]. {msg}"
 
 
+def assert_strict_range(val, lo, hi, msg=""):
+    """Check that value is strictly between lo and hi (exclusive)."""
+    assert lo < val < hi, f"{val} not strictly in ({lo}, {hi}). {msg}"
+
+
 # ---------------------------------------------------------------------------
 # Checks
 # ---------------------------------------------------------------------------
@@ -126,7 +131,7 @@ def check_step():
     result = env.step(Action(tool=ToolName.LOOKUP_ORDER, params={"order_id": "ORD-1001"}))
     assert isinstance(result, StepResult), "step() must return StepResult"
     assert result.observation.step_number == 1
-    assert_range(result.reward.value, 0.0, 1.0, "reward.value out of [0,1]")
+    assert_strict_range(result.reward.value, 0.0, 1.0, "reward.value must be strictly in (0,1)")
 
 
 def check_state():
@@ -187,12 +192,11 @@ def check_grader_scores_in_range():
         assert result is not None
         bd = result.reward.breakdown
         total = bd.total
-        assert_range(total, 0.0, 1.0, f"Task {task_id} score out of [0,1]: {total}")
+        assert_strict_range(total, 0.0, 1.0, f"Task {task_id} score must be strictly in (0,1): {total}")
         assert_range(bd.resolution_correct, 0.0, 0.5)
         assert_range(bd.policy_compliance, 0.0, 0.2)
         assert_range(bd.efficiency, 0.0, 0.15)
         assert_range(bd.customer_satisfaction, 0.0, 0.15)
-        assert bd.total > 0.0, f"Task {task_id}: score should be > 0 on valid trajectory"
 
 
 def check_reward_breakdown_sum():

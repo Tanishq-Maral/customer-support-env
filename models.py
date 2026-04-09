@@ -93,20 +93,20 @@ class RewardBreakdown(BaseModel):
     policy_compliance:     float = Field(0.0, ge=0.0, le=0.2)
     efficiency:            float = Field(0.0, ge=0.0, le=0.15)
     customer_satisfaction: float = Field(0.0, ge=0.0, le=0.15)
+    # total is a real field (not a @property) so it appears in model_dump() / JSON
+    total:                 float = Field(0.0, ge=0.0, le=1.0)
 
-    @property
-    def total(self) -> float:
-        return (
-            self.resolution_correct
-            + self.policy_compliance
-            + self.efficiency
-            + self.customer_satisfaction
-        )
+    def compute_total(self) -> "RewardBreakdown":
+        """Recompute and set total from components. Call after setting components."""
+        object.__setattr__(self, "total",
+            self.resolution_correct + self.policy_compliance +
+            self.efficiency + self.customer_satisfaction)
+        return self
 
 
 class Reward(BaseModel):
     """Reward returned by step()."""
-    value:     float           = Field(..., ge=0.0, le=1.0)
+    value:     float           = Field(..., gt=0.0, lt=1.0)
     breakdown: RewardBreakdown
     done:      bool
     info:      Dict[str, Any]  = Field(default_factory=dict)
