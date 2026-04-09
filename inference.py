@@ -238,7 +238,7 @@ def run_episode(
         dbg(f"Ticket: {obs.ticket.subject} | Customer: {obs.customer_id}")
 
     cumulative_reward = 0.0
-    final_score       = 0.0
+    final_score       = 0.001  # Never emit exactly 0.0
     steps_taken       = 0
     last_result       = None
 
@@ -310,11 +310,15 @@ def run_episode(
         obs = result.observation
 
         if result.done:
-            final_score = round(result.reward.breakdown.total, 4)
+            raw = round(result.reward.breakdown.total, 4)
+            # Clamp strictly between 0 and 1 (exclusive)
+            final_score = max(0.001, min(0.999, raw))
             break
 
+    # Ensure final_score is strictly between 0 and 1 (exclusive)
+    final_score = max(0.001, min(0.999, final_score))
     # Emit [END]
-    log_end(task_id=task_id, score=final_score, steps=steps_taken)
+    log_end(task_id=task_id, score=final_score, steps=max(steps_taken, 1))
 
     breakdown: Dict[str, float] = {}
     if last_result is not None:
