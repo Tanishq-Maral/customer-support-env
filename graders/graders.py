@@ -68,7 +68,7 @@ def _score_message_quality(message: str) -> float:
     """
     if not message or len(message) < 20:
         return 0.05  # Avoid exactly 0.0
-    score = 0.0
+    score = 0.05  # Base score to avoid exactly 0.0 for any non-empty message
     empathy_words   = ["sorry", "apologize", "understand", "frustrating", "thank"]
     action_words    = ["refund", "credit", "ticket", "resolved", "applied", "issued", "notified"]
     confirm_words   = ["please", "feel free", "let us know", "don't hesitate", "contact"]

@@ -230,17 +230,22 @@ def run_episode(
     task_id: str,
     verbose: bool = False,
 ) -> Dict[str, Any]:
-    env = CustomerSupportEnv(task_id=TaskId(task_id))
-    obs = env.reset()
-
     log_start(task_id)
-    if verbose:
-        dbg(f"Ticket: {obs.ticket.subject} | Customer: {obs.customer_id}")
-
     cumulative_reward = 0.0
     final_score       = 0.001  # Never emit exactly 0.0
     steps_taken       = 0
     last_result       = None
+    try:
+        env = CustomerSupportEnv(task_id=TaskId(task_id))
+        obs = env.reset()
+    except Exception as exc:
+        dbg(f"Env init failed for {task_id}: {exc}")
+        log_end(task_id=task_id, score=0.001, steps=1)
+        return {"task_id": task_id, "score": 0.001, "steps": 1,
+                "cumulative_reward": 0.001, "grader_breakdown": {}}
+
+    if verbose:
+        dbg(f"Ticket: {obs.ticket.subject} | Customer: {obs.customer_id}")
 
     for step_num in range(1, MAX_STEPS + 1):
         if obs.done:
@@ -373,7 +378,14 @@ def main() -> None:
     results: List[Dict[str, Any]] = []
     for tid in tasks_to_run:
         dbg(f"Starting task: {tid}")
-        r = run_episode(client, tid, verbose=args.verbose)
+        try:
+            r = run_episode(client, tid, verbose=args.verbose)
+        except Exception as exc:
+            dbg(f"FATAL error in task {tid}: {exc}")
+            # Always emit [END] so the validator can parse a score
+            log_end(task_id=tid, score=0.001, steps=1)
+            r = {"task_id": tid, "score": 0.001, "steps": 1,
+                 "cumulative_reward": 0.001, "grader_breakdown": {}}
         results.append(r)
         dbg(f"Finished {tid}: score={r['score']:.4f} steps={r['steps']}")
 
