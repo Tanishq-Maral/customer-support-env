@@ -25,7 +25,7 @@ tasks:
       Must look up the order, verify eligibility, and issue a refund
       following company policy (within 30 days, order must exist).
     max_steps: 10
-    reward_range: [0.0, 1.0]
+    reward_range: [0.001, 0.999]
 
   - id: account_billing_dispute
     name: "Account & Billing Dispute"
@@ -35,7 +35,7 @@ tasks:
       Must verify the account, identify duplicate transactions,
       apply a credit, and send a confirmation email.
     max_steps: 15
-    reward_range: [0.0, 1.0]
+    reward_range: [0.001, 0.999]
 
   - id: technical_escalation
     name: "Technical Issue with Escalation"
@@ -46,7 +46,7 @@ tasks:
       apply workaround, file an escalation ticket, and proactively
       notify affected customers—all within SLA.
     max_steps: 20
-    reward_range: [0.0, 1.0]
+    reward_range: [0.001, 0.999]
 
 observation_space:
   type: object
