@@ -78,7 +78,7 @@ def log_start(task_id: str) -> None:
 def log_step(task_id: str, step: int, action: str, reward: float, done: bool) -> None:
     """[STEP] line — stdout."""
     # Clamp reward strictly between 0 and 1 (exclusive)
-    reward = max(0.01, min(0.99, reward))
+    reward = max(0.1, min(0.9, reward))
     record = {"task_id": task_id, "step": step, "action": action, "reward": reward, "done": done}
     print(f"[STEP] {json.dumps(record)}", flush=True)
 
@@ -86,7 +86,7 @@ def log_step(task_id: str, step: int, action: str, reward: float, done: bool) ->
 def log_end(task_id: str, score: float, steps: int) -> None:
     """[END] line — stdout."""
     # Clamp score strictly between 0 and 1 (exclusive)
-    score = max(0.01, min(0.99, score))
+    score = max(0.1, min(0.9, score))
     record = {"task_id": task_id, "score": score, "steps": steps, "timestamp": _ts()}
     print(f"[END] {json.dumps(record)}", flush=True)
 
@@ -236,7 +236,7 @@ def run_episode(
 ) -> Dict[str, Any]:
     log_start(task_id)
     cumulative_reward = 0.0
-    final_score       = 0.01  # Never emit exactly 0.0
+    final_score       = 0.1  # Never emit exactly 0.0
     steps_taken       = 0
     last_result       = None
     try:
@@ -244,9 +244,9 @@ def run_episode(
         obs = env.reset()
     except Exception as exc:
         dbg(f"Env init failed for {task_id}: {exc}")
-        log_end(task_id=task_id, score=0.01, steps=1)
-        return {"task_id": task_id, "score": 0.01, "steps": 1,
-                "cumulative_reward": 0.01, "grader_breakdown": {}}
+        log_end(task_id=task_id, score=0.1, steps=1)
+        return {"task_id": task_id, "score": 0.1, "steps": 1,
+                "cumulative_reward": 0.1, "grader_breakdown": {}}
 
     if verbose:
         dbg(f"Ticket: {obs.ticket.subject} | Customer: {obs.customer_id}")
@@ -321,11 +321,11 @@ def run_episode(
         if result.done:
             raw = round(result.reward.breakdown.total, 4)
             # Clamp strictly between 0 and 1 (exclusive)
-            final_score = max(0.01, min(0.99, raw))
+            final_score = max(0.1, min(0.9, raw))
             break
 
     # Ensure final_score is strictly between 0 and 1 (exclusive)
-    final_score = max(0.01, min(0.99, final_score))
+    final_score = max(0.1, min(0.9, final_score))
     # Emit [END]
     log_end(task_id=task_id, score=final_score, steps=max(steps_taken, 1))
 
@@ -387,9 +387,9 @@ def main() -> None:
         except Exception as exc:
             dbg(f"FATAL error in task {tid}: {exc}")
             # Always emit [END] so the validator can parse a score
-            log_end(task_id=tid, score=0.01, steps=1)
-            r = {"task_id": tid, "score": 0.01, "steps": 1,
-                 "cumulative_reward": 0.01, "grader_breakdown": {}}
+            log_end(task_id=tid, score=0.1, steps=1)
+            r = {"task_id": tid, "score": 0.1, "steps": 1,
+                 "cumulative_reward": 0.1, "grader_breakdown": {}}
         results.append(r)
         dbg(f"Finished {tid}: score={r['score']:.4f} steps={r['steps']}")
 
